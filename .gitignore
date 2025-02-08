@@ -1,3 +1,4 @@
 infra/secrets.yaml
+infra/rendered/
 infra/rendered/*
-vm
+vm/
