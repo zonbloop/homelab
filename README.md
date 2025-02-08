@@ -1,162 +1,136 @@
-# Setting Up a Talos-Based Kubernetes Cluster
+# **Talos Kubernetes Cluster Setup with Kubespan**
 
-This guide provides step-by-step instructions to install and configure Talos and set up a Kubernetes cluster. Talos is a modern, secure operating system for Kubernetes nodes.
-
-## Prerequisites
-
-1. **Machines/VMs for the Cluster**:
-   - At least one machine for the control plane.
-   - One or more machines for worker nodes.
-
-2. **Tools Installed Locally**:
-   - [Talosctl](https://talos.dev/docs/v1.0/introduction/getting-started/#install-talosctl)
-   - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-   - [Helm](https://helm.sh/docs/intro/install/)
-
-3. **Network Access**:
-   - Ensure all nodes can communicate over the network.
-   - The local machine should be able to reach the control plane node on port `6443`.
+This guide provides step-by-step instructions for setting up a **Talos-based Kubernetes cluster** with **Kubespan networking** for secure, encrypted node-to-node communication.
 
 ---
 
-## Step 1: Generate Talos Configuration Files
-
-Run the following command to generate the Talos configuration for the control plane and worker nodes:
-
-```bash
-talosctl gen config talos-datadog-k8s https://192.168.10.13:6443 --output-dir _out
-```
-
-- Replace `192.168.10.13` with the desired IP address for the control plane node.
-- This will generate two files in the `_out` directory: `controlplane.yaml` and `worker.yaml`.
+## **🚀 Prerequisites**
+Ensure you have the following installed on your **local machine**:
+- [Talosctl CLI](https://talos.dev/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- **At least 2 nodes** (1 control plane + 1 worker)
 
 ---
 
-## Step 2: Apply Talos Configuration to Nodes
+## **📸 Talos Kubernetes Home Lab**
+Here is my **home lab setup** running Talos Linux with Kubespan networking:
 
-### Configure the Control Plane Node
-
-Run the following command to apply the configuration to the control plane node:
-
-```bash
-talosctl apply-config --insecure --nodes 192.168.10.13 --file _out/controlplane.yaml
-```
-
-### Configure Worker Nodes
-
-Run the following command for each worker node:
-
-```bash
-talosctl apply-config --insecure --nodes 192.168.10.3 --file _out/worker.yaml
-```
-
-- Replace `192.168.10.3` with the IP address of each worker node.
+![Talos Kubernetes Cluster](assets/talos-cluster.jpeg)
 
 ---
 
-## Step 3: Configure Talos Endpoint
+## **🛠 Step 1: Generate Talos Cluster Configuration**
+Run the following command to generate a **Talos Kubernetes configuration** with patches for various configurations:
 
-Set the Talos configuration endpoint to the control plane node's IP:
-
-```bash
-TALOSCONFIG="_out/talosconfig"
-export TALOSCONFIG
+```sh
+mkdir -p rendered
+mkdir -p patches
 ```
 
-Connect `talosctl` to the control plane:
-
-```bash
-talosctl config endpoint 192.168.10.13
+```sh
+talosctl gen config romulus https://192.168.100.103:6443 \
+  --with-secrets secrets.yaml \
+  --config-patch @patches/allow-controlplane-workloads.yaml \
+  --config-patch @patches/cni.yaml \
+  --config-patch @patches/dhcp.yaml \
+  --config-patch @patches/install-disk.yaml \
+  --config-patch @patches/interface-names.yaml \
+  --config-patch @patches/kubelet-certificate.yaml \
+  --config-patch-control-plane @patches/vip.yaml \
+  --output rendered/
 ```
 
 ---
 
-## Step 4: Bootstrap the Kubernetes Control Plane
-
-Run the following command to bootstrap the Kubernetes control plane:
-
-```bash
-talosctl bootstrap
+## **🛠 Step 2: Install Talos on Control Plane Nodes**
+### **1️⃣ Apply Configuration to Control Plane Nodes**
+```sh
+talosctl apply-config -f rendered/controlplane.yaml -n 192.168.100.105 --insecure
+talosctl apply-config -f rendered/controlplane.yaml -n 192.168.100.104 --insecure
 ```
 
-After bootstrapping, verify the nodes:
-
-```bash
-talosctl get nodes
+### **2️⃣ Set Talos Configuration File**
+```sh
+mv rendered/talosconfig ~/.talos/config
 ```
 
----
-
-## Step 5: Install and Configure `kubectl`
-
-1. Download the latest version of `kubectl`:
-
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
+### **3️⃣ Verify Cluster Members**
+```sh
+talosctl get members -n 192.168.100.105
 ```
 
-2. Move `kubectl` to a directory in your `PATH`:
-
-```bash
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+### **4️⃣ Configure Talos Endpoints**
+```sh
+talosctl config endpoint 192.168.100.104 192.168.100.105
 ```
 
-3. Verify the installation:
-
-```bash
-kubectl version --client
+### **5️⃣ Verify Members Again**
+```sh
+talosctl get members -n 192.168.100.105
 ```
 
-4. Copy the `talosconfig` to your Kubernetes configuration directory:
-
-```bash
-mkdir -p ~/.kube
-cp kubeconfig ~/.kube/config
+### **6️⃣ Open Talos Dashboard**
+```sh
+talosctl dashboard -n 192.168.100.105
 ```
 
-5. Test the connection to the cluster:
+### **7️⃣ Bootstrap the Kubernetes Cluster**
+```sh
+talosctl bootstrap -n 192.168.100.105
+```
 
-```bash
-kubectl get nodes
+### **8️⃣ Verify Talos Dashboard**
+```sh
+talosctl dashboard -n 192.168.100.105
 ```
 
 ---
 
-## Step 6: Install Helm (Optional)
-
-1. Download the Helm installation script:
-
-```bash
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
+## **🛠 Step 3: Install Talos on Worker Node**
+### **1️⃣ Apply Configuration to Worker Node**
+```sh
+talosctl apply-config -f rendered/worker.yaml -n 192.168.100.104 --insecure
 ```
 
-2. Run the script to install Helm:
-
-```bash
-./get_helm.sh
-```
-
-3. Verify the installation:
-
-```bash
-helm version
+### **2️⃣ Verify the Dashboard**
+```sh
+talosctl dashboard -n 192.168.100.104 -e 192.168.100.105
 ```
 
 ---
 
-## Notes
+## **🛠 Step 4: Verify Cluster & Enable Kubespan Networking**
+### **1️⃣ Check Talos Services**
+Ensure Talos services are running on all nodes:
+```sh
+talosctl health -n 192.168.100.105
+talosctl health -n 192.168.100.104
+```
 
-- Replace all IP addresses with the appropriate ones for your setup.
-- Use secure methods (e.g., HTTPS and certificates) for production environments.
-- After installation, you can deploy workloads and manage your Kubernetes cluster using `kubectl` and `helm`.
+### **2️⃣ Verify Kubespan**
+```sh
+talosctl get kubespan -n 192.168.100.105
+talosctl get kubespan -n 192.168.100.104
+```
+
+Kubespan automatically sets up **WireGuard-based secure networking** between nodes, allowing future **multi-cluster connections** (e.g., cloud, bare-metal, hybrid environments).
 
 ---
 
-## Troubleshooting
+## **🛠 Step 5: Retrieve Kubernetes Kubeconfig**
+To interact with the cluster using `kubectl`:
+```sh
+talosctl kubeconfig -n 192.168.100.105 --force
+kubectl get nodes -o wide
+```
 
-- If nodes are not visible after bootstrapping, check the network connectivity and ensure the `TALOSCONFIG` file is correctly configured.
-- Use the `talosctl logs` command to view logs on the nodes for debugging.
+---
 
-
+## **✅ Summary**
+| Task  | ✅ Status |
+|-----------------------------|------------|
+| **Generate Talos Config** | ✅ Done |
+| **Install Control Plane** | ✅ Done |
+| **Install Worker Node** | ✅ Done |
+| **Enable Kubespan** | ✅ Done |
+| **Verify Cluster Health** | ✅ Done |

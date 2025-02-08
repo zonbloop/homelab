@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ingress-nginx-admission-patch
+  namespace: ingress-nginx
+spec:
+  template:
+    metadata:
+      labels:
+        job-name: ingress-nginx-admission-patch
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: ingress-nginx-admission
+      containers:
+        - name: patch
+          image: registry.k8s.io/ingress-nginx/controller:v1.9.5
+          command:
+            - "/ingress-nginx/kubectl-certgen"
+          args:
+            - patch
+            - --webhook-name=ingress-nginx-admission
+            - --secret-name=ingress-nginx-admission
+            - --namespace=ingress-nginx
+

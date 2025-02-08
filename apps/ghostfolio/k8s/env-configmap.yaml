@@ -1,0 +1,17 @@
+apiVersion: v1
+data:
+  ACCESS_TOKEN_SALT: LhHuyas4BW6O8JCKT9Vx
+  COMPOSE_PROJECT_NAME: ghostfolio
+  DATABASE_URL: postgresql://user:yourpassword@10.111.10.194:5432/ghostfolio-db?connect_timeout=300&sslmode=disable
+  JWT_SECRET_KEY: gnfE4MSX4i4ilxZPBCF6
+  POSTGRES_DB: ghostfolio-db
+  POSTGRES_PASSWORD: EcUdadG8EsOhtWGvDMTF
+  POSTGRES_USER: user
+  REDIS_HOST: ghostfolio-redis
+  REDIS_PASSWORD: xuuvh6J36eRhpPSjHKJ6
+  REDIS_PORT: "6379"
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: ghostfolio-env
+  name: env

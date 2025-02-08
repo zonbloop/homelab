@@ -1,0 +1,12 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.100.100-192.168.100.110  # Choose an available range in your network
+
+env:
+  MEALIE_RECIPE_SCRAPERS: true
+  TZ: America/Chicago

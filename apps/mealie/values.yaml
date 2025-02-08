@@ -1,0 +1,37 @@
+controllerType: statefulset  # Ensures fixed pod names
+
+persistence:
+  api-data:
+    enabled: true
+    hostPath: /var/mnt/mealie-data  # Change this to your preferred host directory
+    mountPath: /app/data/  # Ensure this matches what Mealie expects inside the container
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+ingress:
+  # -- Enable and configure ingress settings for the chart under this key.
+  # @default -- See values.yaml
+  main:
+    enabled: true
+
+env:
+  MEALIE_RECIPE_USER_AGENT: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+  MEALIE_RECIPE_SCRAPERS: true
+  TZ: UTC-6
+api:
+  env:
+    TZ: UTC-6
+
+
+service:
+  main:
+    type: NodePort
+    ports:
+      http:
+        enabled: true
+        port: 3000
+        nodePort: 31235  # Change this to your preferred NodePort (must be between 30000-32767)
+      api:
+        enabled: true
+        port: 9000
+        nodePort: 31234  # Set a fixed NodePort for the API
