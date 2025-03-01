@@ -28,6 +28,7 @@ mkdir -p patches
 ```
 
 ```sh
+talosctl gen secrets
 talosctl gen config romulus https://192.168.100.103:6443 \
   --with-secrets secrets.yaml \
   --config-patch @patches/allow-controlplane-workloads.yaml \
