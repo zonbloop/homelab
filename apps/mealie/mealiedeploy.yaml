@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mealie
+  namespace: mealie
+  annotations:
+    metallb.universe.tf/address-pool: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mealie
+  template:
+    metadata:
+      labels:
+        app: mealie
+    spec:
+      containers:
+      - name: mealie
+        image: ghcr.io/mealie-recipes/mealie:v2.6.0
+        ports:
+        - containerPort: 9000
+        env:
+        - name: ALLOW_SIGNUP
+          value: "true"
+        - name: BASE_URL
+          value: "http://mealie.local"
+        - name: TZ
+          value: "UTC"

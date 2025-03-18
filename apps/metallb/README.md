@@ -1,2 +1,2 @@
-k apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
-k apply -f ipaddress_pools.yaml
+k apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.9/config/manifests/metallb-native.yaml
+k apply -f configmap.yaml -n metallb-system

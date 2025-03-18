@@ -2,4 +2,6 @@ infra/secrets.yaml
 infra/rendered/
 infra/rendered/*
 vm/
+apps/cloudflare/
+infra/metal-arm64*
 gitconvention.md
